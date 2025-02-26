@@ -3,6 +3,7 @@ import pandas as pd
 from PIL import Image
 import numpy as np
 from tensorflow.keras.models import load_model
+import tempfile
 from utils.ocr_utils import (
     load_roboflow_project, load_yolo_model, train_yolo_model,
     run_yolo_inference, visualize_detections, extract_text_with_pytesseract,
@@ -65,7 +66,12 @@ elif app_mode == "Glaucoma Prediction":
     # Upload a pre-trained glaucoma detection model (expects a .h5 file)
     model_file = st.file_uploader("Upload Glaucoma Detection Model (.h5)", type=["h5"])
     if model_file and 'clinical_data_df' in locals():
-        model = load_model(model_file)
+        # Save the uploaded file to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".h5") as tmp:
+            tmp.write(model_file.getvalue())
+            tmp_path = tmp.name
+
+        model = load_model(tmp_path)
         processed_data = preprocess_data_for_glaucoma(clinical_data_df)
         predicted_class, confidence = predict_glaucoma(model, processed_data)
         st.write(f"**Predicted Class:** {predicted_class} | **Confidence:** {confidence:.2f}")
@@ -91,3 +97,4 @@ elif app_mode == "Explainability":
     st.header("Model Explainability (Grad-CAM)")
     st.info("This section is primarily for image-based explainability and may not be used for tabular data models.")
     # (Optional: Implement Grad-CAM visualization for image models here.)
+

@@ -1,3 +1,22 @@
+import os
+
+# --- Option 1: Enable GPU Memory Growth ---
+import tensorflow as tf
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        print("Memory growth enabled for GPU(s).")
+    except RuntimeError as e:
+        print("Error enabling memory growth:", e)
+
+# --- Option 2: Force CPU Usage (Uncomment these lines if needed) ---
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# print("Running on CPU only.")
+
+
+
 import streamlit as st
 import pandas as pd
 from PIL import Image

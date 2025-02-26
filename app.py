@@ -1,6 +1,5 @@
 import os
-
-# --- Option 1: Enable GPU Memory Growth ---
+# Option 1: Enable GPU memory growth
 import tensorflow as tf
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -10,6 +9,26 @@ if gpus:
         print("Memory growth enabled for GPU(s).")
     except RuntimeError as e:
         print("Error enabling memory growth:", e)
+
+# Option 2: Alternatively, disable GPU usage (uncomment the following two lines if needed)
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# print("Running on CPU only.")
+
+import streamlit as st
+import pandas as pd
+from PIL import Image
+import numpy as np
+from tensorflow.keras.models import load_model
+import tempfile
+from utils.ocr_utils import (
+    load_roboflow_project, load_yolo_model, train_yolo_model,
+    run_yolo_inference, visualize_detections, extract_text_with_pytesseract,
+    extract_text_with_trocr, preprocess_image_for_ocr, parse_clinical_data
+)
+from utils.model_utils import preprocess_data_for_glaucoma, predict_glaucoma
+
+st.title("Glaucoma Detection from Clinical Report Data")
+# ... rest of your code follows
 
 # --- Option 2: Force CPU Usage (Uncomment these lines if needed) ---
 # os.environ["CUDA_VISIBLE_DEVICES"] = ""

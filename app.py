@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 from tensorflow.keras.models import load_model
 import tempfile
+
 from utils.ocr_utils import (
     load_roboflow_project, load_yolo_model, train_yolo_model,
     run_yolo_inference, visualize_detections, extract_text_with_pytesseract,
@@ -14,8 +15,10 @@ from utils.model_utils import preprocess_data_for_glaucoma, predict_glaucoma
 st.title("Glaucoma Detection from Clinical Report Data")
 
 # Sidebar Navigation
-app_mode = st.sidebar.selectbox("Select App Mode", 
-                                ["OCR Extraction", "Glaucoma Prediction", "Train YOLOv8", "Explainability"])
+app_mode = st.sidebar.selectbox(
+    "Select App Mode",
+    ["OCR Extraction", "Glaucoma Prediction", "Train YOLOv8", "Explainability"]
+)
 
 # --- Mode 1: OCR Extraction ---
 if app_mode == "OCR Extraction":
@@ -46,8 +49,9 @@ if app_mode == "OCR Extraction":
 # --- Mode 2: Glaucoma Prediction ---
 elif app_mode == "Glaucoma Prediction":
     st.header("Glaucoma Prediction from Clinical Data")
-    # Choose data source: Upload CSV or paste data (if already extracted)
-    data_source = st.radio("Select Data Source", ["Upload CSV", "Paste CSV Data"])
+    
+    # --- Clinical Data Section ---
+    data_source = st.radio("Select Clinical Data Source", ["Upload CSV", "Paste CSV Data"])
     
     if data_source == "Upload CSV":
         csv_file = st.file_uploader("Upload CSV File", type=["csv"])
@@ -63,18 +67,30 @@ elif app_mode == "Glaucoma Prediction":
             except Exception as e:
                 st.error("Error parsing CSV data. Please check the format.")
     
-    # Upload a pre-trained glaucoma detection model (expects a .h5 file)
-    model_file = st.file_uploader("Upload Glaucoma Detection Model (.h5)", type=["h5"])
-    if model_file and 'clinical_data_df' in locals():
-        # Save the uploaded file to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".h5") as tmp:
-            tmp.write(model_file.getvalue())
-            tmp_path = tmp.name
-
-        model = load_model(tmp_path)
-        processed_data = preprocess_data_for_glaucoma(clinical_data_df)
-        predicted_class, confidence = predict_glaucoma(model, processed_data)
-        st.write(f"**Predicted Class:** {predicted_class} | **Confidence:** {confidence:.2f}")
+    # --- Model Loading Section ---
+    model_method = st.radio("Select Model Loading Method", ["Upload Model File", "Use Local Path"])
+    
+    if model_method == "Upload Model File":
+        model_file = st.file_uploader("Upload Glaucoma Detection Model (.h5)", type=["h5"])
+        if model_file and 'clinical_data_df' in locals():
+            # Save the uploaded model file to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".h5") as tmp:
+                tmp.write(model_file.getvalue())
+                tmp_path = tmp.name
+            model = load_model(tmp_path)
+            processed_data = preprocess_data_for_glaucoma(clinical_data_df)
+            predicted_class, confidence = predict_glaucoma(model, processed_data)
+            st.write(f"**Predicted Class:** {predicted_class} | **Confidence:** {confidence:.2f}")
+    elif model_method == "Use Local Path":
+        model_path = st.text_input("Enter path to the Glaucoma Detection Model (.h5)", "models/glaucoma_model.h5")
+        if model_path and 'clinical_data_df' in locals():
+            try:
+                model = load_model(model_path)
+                processed_data = preprocess_data_for_glaucoma(clinical_data_df)
+                predicted_class, confidence = predict_glaucoma(model, processed_data)
+                st.write(f"**Predicted Class:** {predicted_class} | **Confidence:** {confidence:.2f}")
+            except Exception as e:
+                st.error(f"Error loading model from {model_path}: {e}")
 
 # --- Mode 3: Train YOLOv8 ---
 elif app_mode == "Train YOLOv8":
@@ -97,4 +113,3 @@ elif app_mode == "Explainability":
     st.header("Model Explainability (Grad-CAM)")
     st.info("This section is primarily for image-based explainability and may not be used for tabular data models.")
     # (Optional: Implement Grad-CAM visualization for image models here.)
-
